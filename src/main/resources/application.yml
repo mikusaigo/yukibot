@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: yukibot
+server:
+  port: 1080
