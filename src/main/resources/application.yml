@@ -2,4 +2,4 @@ spring:
   application:
     name: yukibot
 server:
-  port: 1080
+  port: 8010
