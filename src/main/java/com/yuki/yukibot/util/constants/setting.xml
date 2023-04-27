@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <localRepository>D:\developTools\apache-maven-3.8.6\repository</localRepository>
+
+    <servers>
+        <server>
+            <id>bizworks-release</id>
+            <username>bizwork</username>
+            <password>JYx6XPP2wDb9E8</password>
+        </server>
+        <server>
+            <id>bizworks-snapshot</id>
+            <username>bizwork</username>
+            <password>JYx6XPP2wDb9E8</password>
+        </server>
+        <server>
+            <id>mirror</id>
+            <username>bizwork</username>
+            <password>JYx6XPP2wDb9E8</password>
+        </server>
+    </servers>
+
+    <mirrors>
+        <mirror>
+            <id>mirror</id>
+            <mirrorOf>*</mirrorOf>
+            <name>mirror</name>
+            <url>http://package.zgs.yun:33000/1/maven/maven-public</url>
+        </mirror>
+        <mirror>
+            <id>alimaven</id>
+            <name>aliyun maven</name>
+            <url>https://maven.aliyun.com/repository/public/</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+
+    <profiles>
+        <profile>
+            <id>jdk-1.8</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>1.8</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.source>1.8</maven.compiler.source>
+                <maven.compiler.target>1.8</maven.compiler.target>
+                <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>basic-private-repo</id>
+            <repositories>
+                <repository>
+                    <id>bizworks-release</id>
+                    <url>http://package.zgs.yun:33000/1/maven/maven-releases</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>bizworks-snapshot</id>
+                    <url>http://package.zgs.yun:33000/1/maven/maven-snapshots</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>bizworks-release</id>
+                    <url>http://package.zgs.yun:33000/1/maven/maven-releases</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>bizworks-snapshot</id>
+                    <url>http://package.zgs.yun:33000/1/maven/maven-snapshots</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+
+
+
+
+        <profile>
+            <id>basic-private-repo1</id>
+            <repositories>
+                <repository>
+                    <id>bizworks-release1</id>
+                    <url>http://10.100.11.121:8081/repository/maven-releases</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>bizworks-snapshot1</id>
+                    <url>http://10.100.11.121:8081/repository/maven-snapshots</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>bizworks-release1</id>
+                    <url>http://10.100.11.121:8081/repository/maven-releases/maven-releases</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>bizworks-snapshot1</id>
+                    <url>http://10.100.11.121:8081/repository/maven-releases/maven-snapshots</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>jdk-1.8</activeProfile>
+        <activeProfile>basic-private-repo</activeProfile>
+        <activeProfile>basic-private-repo1</activeProfile>
+    </activeProfiles>
+</settings>

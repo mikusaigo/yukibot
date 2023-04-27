@@ -34,6 +34,17 @@ public class QQRobot extends SimpleListenerHost {
     private static final ChatGPTApi chatGPTApi = new ChatGPTApi();
 
 
+
+    public static final Map<Group, Map<Member,List<ChatMessage>>> MEMBER_CHAT_CACHE = new HashMap<>();
+
+    public static final Map<Long, Boolean> AUTHORIZATION_GROUP = new HashMap<>();
+
+    static {
+        AUTHORIZATION_GROUP.put(992825862L, Boolean.TRUE);
+        AUTHORIZATION_GROUP.put(917016978L, Boolean.TRUE);
+        AUTHORIZATION_GROUP.put(694908428L, Boolean.TRUE);
+    }
+
     public static void main(String[] args) {
         BotConfiguration botConfiguration = new BotConfiguration();
         botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_WATCH);
@@ -59,7 +70,7 @@ public class QQRobot extends SimpleListenerHost {
                 At at = (At) messageContent;
                 if (at.getTarget() == BotConstants.BOT_QQ){
                     String prompt = message.contentToString();
-                    System.out.println(prompt);
+                    clearCache(event, prompt);
                     sendMsg(event, prompt);
                 }
             }
