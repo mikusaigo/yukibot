@@ -1,33 +1,38 @@
 package com.yuki.yukibot.util;
 
-import cn.hutool.core.text.CharSequenceUtil;
-import com.yuki.yukibot.YukibotApplication;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.StrPool;
+import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.api.ChatGPTApi;
-import com.yuki.yukibot.model.chatgpt.ExecuteRet;
+import com.yuki.yukibot.model.chatgpt.ChatMessage;
 import com.yuki.yukibot.util.constants.BotConstants;
+import com.yuki.yukibot.util.constants.ChatConstants;
 import kotlin.coroutines.CoroutineContext;
+import lombok.extern.slf4j.Slf4j;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.BotFactory;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
-import net.mamoe.mirai.event.Event;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.message.code.MiraiCode;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.MessageContent;
-import net.mamoe.mirai.message.data.MessageKey;
 import net.mamoe.mirai.message.data.PlainText;
-import net.mamoe.mirai.message.data.SingleMessage;
+import net.mamoe.mirai.message.data.QuoteReply;
 import net.mamoe.mirai.utils.BotConfiguration;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
 @Component
 public class QQRobot extends SimpleListenerHost {
 
@@ -62,8 +67,7 @@ public class QQRobot extends SimpleListenerHost {
     @EventHandler
     public void onGroupMessage(GroupMessageEvent event){
         Group group = event.getGroup();
-        if (group.getId() == BotConstants.LISTEN_GROUP){
-            Member sender = event.getSender();
+        if (Boolean.TRUE.equals(AUTHORIZATION_GROUP.get(group.getId()))){
             MessageChain message = event.getMessage();
             MessageContent messageContent = message.get(MessageContent.Key);
             if (messageContent instanceof At){
@@ -78,17 +82,94 @@ public class QQRobot extends SimpleListenerHost {
     }
 
     public void sendMsg(GroupMessageEvent event, String message){
-        String result = chatGPTApi.chat(message);
+        Group group = event.getGroup();
+        Member sender = event.getSender();
+        String result;
+        try {
+            ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), message);
+            List<ChatMessage> historyMsg = getHistoryMsg(group, sender);
+            if (CollUtil.isEmpty(historyMsg)){
+                result = chatGPTApi.chat(Collections.singletonList(chatMessage));
+            }else {
+                historyMsg.add(chatMessage);
+                result = chatGPTApi.chat(historyMsg);
+            }
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            result = "网络不太好，请稍后重试";
+        }
         System.out.println(result);
         MessageChainBuilder builder = new MessageChainBuilder()
-                .append(new At(event.getSender().getId()))
-                .append(new PlainText(result));
+                .append(new QuoteReply(event.getMessage()))
+                .append(new PlainText(StrPool.C_SPACE + result));
         // 发送回复消息
-        event.getGroup().sendMessage(builder.build());
+        try {
+            event.getGroup().sendMessage(builder.build());
+            saveCache(event.getGroup(), event.getSender(), message, result);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
     public void handleException(@NotNull CoroutineContext context, @NotNull Throwable exception) {
         super.handleException(context, exception);
+    }
+
+    /**
+     * 保存聊天记录
+     * @param group 群组
+     * @param member 群员
+     * @param userMsg 用户消息
+     * @param chatGptMsg chatGpt消息
+     */
+    public static void saveCache(Group group, Member member, String userMsg, String chatGptMsg){
+        Map<Member, List<ChatMessage>> memberListMap = MEMBER_CHAT_CACHE.get(group);
+        ChatMessage user = new ChatMessage(RoleEnum.USER.getRole(), userMsg);
+        ChatMessage assistant = new ChatMessage(RoleEnum.ASSISTANT.getRole(), chatGptMsg);
+        if (CollUtil.isEmpty(memberListMap)){
+            Map<Member, List<ChatMessage>> groupChatMap = new HashMap<>();
+            List<ChatMessage> memberMsgList = new LinkedList<>();
+            memberMsgList.add(user);
+            memberMsgList.add(assistant);
+            groupChatMap.put(member, memberMsgList);
+            MEMBER_CHAT_CACHE.put(group, groupChatMap);
+            return;
+        }
+        List<ChatMessage> chatMessages = memberListMap.get(member);
+
+        if (CollUtil.isEmpty(chatMessages)){
+            List<ChatMessage> memberMsgList = new LinkedList<>();
+            memberMsgList.add(user);
+            memberMsgList.add(assistant);
+            memberListMap.put(member, memberMsgList);
+            return;
+        }
+        if (chatMessages.size() >= ChatConstants.MAX_ONCE_CHAT_TIME){
+            log.info("目前缓存了的数据====>{}", JSONUtil.toJsonStr(MEMBER_CHAT_CACHE));
+            chatMessages.clear();
+        }
+        chatMessages.add(user);
+        chatMessages.add(assistant);
+
+    }
+
+    public static List<ChatMessage> getHistoryMsg(Group group, Member member){
+        Map<Member, List<ChatMessage>> memberListMap = MEMBER_CHAT_CACHE.get(group);
+        if (CollUtil.isEmpty(memberListMap)){
+            return null;
+        }
+        return memberListMap.get(member);
+    }
+
+    public static void clearCache(GroupMessageEvent event, String msg){
+        if ("end".equalsIgnoreCase(msg) || "结束".equals(msg)){
+            List<ChatMessage> historyMsg = getHistoryMsg(event.getGroup(), event.getSender());
+            if (CollUtil.isEmpty(historyMsg)){
+                return;
+            }
+            historyMsg.clear();
+        }
     }
 }
