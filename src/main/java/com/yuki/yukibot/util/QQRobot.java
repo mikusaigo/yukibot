@@ -38,8 +38,6 @@ public class QQRobot extends SimpleListenerHost {
 
     private static final ChatGPTApi chatGPTApi = new ChatGPTApi();
 
-
-
     public static final Map<Group, Map<Member,List<ChatMessage>>> MEMBER_CHAT_CACHE = new HashMap<>();
 
     public static final Map<Long, Boolean> AUTHORIZATION_GROUP = new HashMap<>();
@@ -52,7 +50,7 @@ public class QQRobot extends SimpleListenerHost {
 
     public static void main(String[] args) {
         BotConfiguration botConfiguration = new BotConfiguration();
-        botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_WATCH);
+        botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_PAD);
         botConfiguration.setAutoReconnectOnForceOffline(true);
         botConfiguration.setLoginCacheEnabled(true);
         // 创建机器人实例
@@ -64,6 +62,7 @@ public class QQRobot extends SimpleListenerHost {
         bot.login();
     }
 
+    @SuppressWarnings("unused")
     @EventHandler
     public void onGroupMessage(GroupMessageEvent event){
         Group group = event.getGroup();

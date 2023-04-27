@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+/cache/account.secrets
+/cache/session.bin
+/cache/servers.json
