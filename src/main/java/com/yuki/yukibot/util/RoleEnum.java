@@ -2,6 +2,8 @@ package com.yuki.yukibot.util;
 
 public enum RoleEnum {
 
+    SYSTEM("system", "系统"),
+
     USER("user", "用户"),
 
     ASSISTANT("assistant", "助手");
