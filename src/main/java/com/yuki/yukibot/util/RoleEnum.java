@@ -1,5 +1,7 @@
 package com.yuki.yukibot.util;
 
+import com.yuki.yukibot.model.chatgpt.ChatMessage;
+
 public enum RoleEnum {
 
     SYSTEM("system", "系统"),
@@ -23,5 +25,17 @@ public enum RoleEnum {
 
     public String getName() {
         return name;
+    }
+
+    public static boolean isSysRoleMsg(ChatMessage message){
+        return SYSTEM.getRole().equals(message.getRole());
+    }
+
+    public static boolean isUserRoleMsg(ChatMessage message){
+        return USER.getRole().equals(message.getRole());
+    }
+
+    public static boolean isAssistantRoleMsg(ChatMessage message){
+        return ASSISTANT.getRole().equals(message.getRole());
     }
 }

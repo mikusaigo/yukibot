@@ -6,7 +6,7 @@ public class RedisConstants {
 
     public static final String HISTORY_KEY = "history:";
 
-    public static final String GROUP_MSG_KEY = "history:groupmsg:";
+    public static final String GROUP_MSG_KEY = "history:group:";
 
-    public static final String FRIEND_MSG_KEY = "history:friendmsg:";
+    public static final String FRIEND_MSG_KEY = "history:friend:";
 }

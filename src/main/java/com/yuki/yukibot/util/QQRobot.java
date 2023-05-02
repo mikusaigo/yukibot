@@ -1,12 +1,15 @@
 package com.yuki.yukibot.util;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.text.StrPool;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.api.ChatGPTApi;
 import com.yuki.yukibot.dao.ChatHistoryService;
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
+import com.yuki.yukibot.model.chatgpt.ChatUsage;
 import com.yuki.yukibot.util.constants.BotConstants;
+import com.yuki.yukibot.util.constants.ChatConstants;
 import kotlin.coroutines.CoroutineContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,12 +59,11 @@ public class QQRobot extends SimpleListenerHost {
     }
 
     @PostConstruct
-    public void initBot(){
+    public void initBot() {
         BotConfiguration botConfiguration = new BotConfiguration();
         botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_PAD);
         botConfiguration.setAutoReconnectOnForceOffline(true);
         botConfiguration.setLoginCacheEnabled(true);
-        botConfiguration.setShowingVerboseEventLog(false);
         botConfiguration.setDeviceInfo(bot -> DeviceInfo.from(new File("src/main/resources/device/device.json")));
         // 创建机器人实例
 
@@ -83,7 +85,6 @@ public class QQRobot extends SimpleListenerHost {
                 At at = (At) messageContent;
                 if (at.getTarget() == BotConstants.BOT_QQ) {
                     String prompt = message.contentToString();
-                    clearCache(event, prompt);
                     sendMsg(event, prompt);
                 }
             }
@@ -94,41 +95,28 @@ public class QQRobot extends SimpleListenerHost {
         Group group = event.getGroup();
         Member sender = event.getSender();
         String result;
-        int sysIndex = message.indexOf("sys：");
-        if (sysIndex > 0) {
-            message = message.substring(sysIndex + "sys：".length());
-            if (message.length() > 1){
-                sendNormalMsg(event, "好的");
+        boolean sysMsg = ChatUtil.isSysMsg(message);
+        List<ChatMessage> msgHistoryList = chatHistoryService.getMsgHistoryList(group.getId(), sender.getId());
+        List<ChatMessage> clearedHistoryList = chatHistoryService.clearHistory(group.getId(), sender.getId(), msgHistoryList);
+        if (sysMsg) {
+            message = ChatUtil.getRealMsg(message, true);
+            if (CharSequenceUtil.isNotBlank(message)) {
+                GroupMessageSender.sendQuoteAtMsg(group, sender, event.getMessage(), "好的");
                 saveCache(group, sender, message, null, true);
             }
             return;
         } else {
             try {
                 ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), message);
-                List<ChatMessage> historyMsg = chatHistoryService.getMsgHistoryList(group.getId(), sender.getId());
-                if (CollUtil.isEmpty(historyMsg)) {
-                    result = chatGPTApi.chat(Collections.singletonList(chatMessage));
-                } else {
-                    historyMsg.add(chatMessage);
-                    result = chatGPTApi.chat(historyMsg);
-                }
+                clearedHistoryList.add(chatMessage);
+                result = chatGPTApi.chat(clearedHistoryList);
+                saveCache(group, sender, message, result, false);
             } catch (RuntimeException e) {
                 e.printStackTrace();
                 result = "网络不太好，请稍后重试";
             }
-            System.out.println(result);
         }
-        MessageChainBuilder builder = new MessageChainBuilder()
-                .append(new QuoteReply(event.getMessage()))
-                .append(new PlainText(StrPool.C_SPACE + result));
-
-        // 发送回复消息
-        try {
-            event.getGroup().sendMessage(builder.build());
-            saveCache(event.getGroup(), event.getSender(), message, result, false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        GroupMessageSender.sendQuoteAtMsg(group, sender, event.getMessage(), result);
 
     }
 
@@ -157,41 +145,26 @@ public class QQRobot extends SimpleListenerHost {
         ChatMessage user = new ChatMessage(RoleEnum.USER.getRole(), userMsg);
         ChatMessage system = new ChatMessage(RoleEnum.SYSTEM.getRole(), userMsg);
         ChatMessage assistant = new ChatMessage(RoleEnum.ASSISTANT.getRole(), chatGptMsg);
-        if (CollUtil.isEmpty(msgHistoryList)){
+        if (CollUtil.isEmpty(msgHistoryList)) {
             msgHistoryList = new LinkedList<>();
         }
-        if (isSysMsg){
+        if (isSysMsg) {
             ChatMessage first = CollUtil.getFirst(msgHistoryList);
-            if (null != first && RoleEnum.SYSTEM.getRole().equals(first.getRole())){
+            if (null != first && RoleEnum.SYSTEM.getRole().equals(first.getRole())) {
                 msgHistoryList.set(0, system);
             }
             msgHistoryList.add(0, system);
-        }else {
+        } else {
             msgHistoryList.add(user);
             msgHistoryList.add(assistant);
         }
         String cache = JSONUtil.toJsonStr(msgHistoryList);
-        log.info("缓存的数据===>{}", cache);
         chatHistoryService.saveMsgHistory(group.getId(), member.getId(), cache);
 
     }
 
-    public static List<ChatMessage> getHistoryMsg(Group group, Member member) {
-        Map<Member, List<ChatMessage>> memberListMap = MEMBER_CHAT_CACHE.get(group);
-        if (CollUtil.isEmpty(memberListMap)) {
-            return null;
-        }
-        return memberListMap.get(member);
-    }
-
     public static void clearCache(GroupMessageEvent event, String msg) {
-        if ("end".equalsIgnoreCase(msg) || "结束".equals(msg)) {
-            List<ChatMessage> historyMsg = getHistoryMsg(event.getGroup(), event.getSender());
-            if (CollUtil.isEmpty(historyMsg)) {
-                return;
-            }
-            historyMsg.clear();
-        }
+
     }
 
     public static String getRealContent(String message) {

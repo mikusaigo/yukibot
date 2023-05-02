@@ -1,5 +1,6 @@
 package com.yuki.yukibot.util;
 
+import cn.hutool.core.text.StrPool;
 import com.yuki.yukibot.util.constants.ReplyModeEnum;
 import lombok.extern.slf4j.Slf4j;
 import net.mamoe.mirai.contact.Group;
@@ -23,9 +24,9 @@ public class GroupMessageSender extends MessageSender {
      * @param group   要发送消息的群
      * @param message 要发送的消息
      */
-    public static void sendMsg(Group group, MessageChain message) {
+    public static void sendMsg(Group group, String message) {
         MessageChain reply = new MessageChainBuilder()
-                .append(new PlainText(message.contentToString()))
+                .append(new PlainText(message))
                 .build();
         group.sendMessage(reply);
     }
@@ -39,26 +40,43 @@ public class GroupMessageSender extends MessageSender {
      * @param message 发送者发送的消息
      * @param reply 回复的消息
      */
-    public static void sendMsgToMember(Group group, Member member, String replyMode, MessageChain message, String reply) {
+    public static boolean sendMsgToMember(Group group, Member member, String replyMode, MessageChain message, String reply) {
         MessageChainBuilder replyBuilder = new MessageChainBuilder();
         MessageChain replyChain;
-        if (ReplyModeEnum.AT.getMode().equals(replyMode)) {
-            replyChain = replyBuilder.append(new At(member.getId()))
-                    .append(new PlainText(reply))
-                    .build();
-        } else if (ReplyModeEnum.QUOTE_REPLY.getMode().equals(replyMode)) {
-            replyChain = replyBuilder.append(new QuoteReply(message))
-                    .append(new PlainText(reply))
-                    .build();
-        } else if (ReplyModeEnum.ALL.getMode().equals(replyMode)) {
-            replyChain = replyBuilder.append(new QuoteReply(message))
-                    .append(new At(member.getId()))
-                    .append(new PlainText(reply))
-                    .build();
-        } else {
-            log.error("invalid replyMode ===> {}", replyMode);
-            return;
+        try {
+            if (ReplyModeEnum.AT.getMode().equals(replyMode)) {
+                replyChain = replyBuilder.append(new At(member.getId()))
+                        .append(new PlainText(StrPool.C_SPACE + reply))
+                        .build();
+            } else if (ReplyModeEnum.QUOTE_REPLY.getMode().equals(replyMode)) {
+                replyChain = replyBuilder.append(new QuoteReply(message))
+                        .append(new PlainText(StrPool.C_SPACE + reply))
+                        .build();
+            } else if (ReplyModeEnum.ALL.getMode().equals(replyMode)) {
+                replyChain = replyBuilder.append(new QuoteReply(message))
+                        .append(new At(member.getId()))
+                        .append(new PlainText(StrPool.C_SPACE + reply))
+                        .build();
+            } else {
+                log.error("invalid replyMode ===> {}", replyMode);
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
         }
         group.sendMessage(replyChain);
+        return true;
+    }
+
+    public static boolean sendAtMsg(Group group, Member member, String reply){
+        return sendMsgToMember(group, member, ReplyModeEnum.AT.getMode(), null, reply);
+    }
+
+    public static boolean sendQuoteMsg(Group group, Member member, MessageChain messages, String reply){
+        return sendMsgToMember(group, member, ReplyModeEnum.QUOTE_REPLY.getMode(), messages, reply);
+    }
+
+    public static boolean sendQuoteAtMsg(Group group, Member member, MessageChain messages, String reply){
+        return sendMsgToMember(group, member, ReplyModeEnum.ALL.getMode(), messages, reply);
     }
 }

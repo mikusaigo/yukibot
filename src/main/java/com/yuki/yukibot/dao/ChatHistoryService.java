@@ -11,4 +11,8 @@ public interface ChatHistoryService {
     String getMsgHistory(Long groupId, Long memberId);
 
     List<ChatMessage> getMsgHistoryList(Long groupId, Long memberId);
+
+    boolean hasSysMsg(List<ChatMessage> historyList);
+
+    List<ChatMessage> clearHistory(Long groupId, Long memberId, List<ChatMessage> historyList);
 }

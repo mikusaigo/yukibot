@@ -1,16 +1,16 @@
 {
   "deviceInfoVersion": 2,
   "data": {
-    "display": "TKQ1.220829.002 test-keys",
-    "product": "odin",
-    "device": "odin",
-    "board": "odin",
-    "brand": "Xiaomi",
-    "model": "2106118C",
+    "display": "QP1A.190711.020",
+    "product": "cannon",
+    "device": "cannon",
+    "board": "cannon",
+    "brand": "Redmi",
+    "model": "M2007J22C",
     "bootloader": "unknown",
-    "fingerprint": "Xiaomi/odin/odin:13/TKQ1.220829.002/V14.0.4.0.TKMCNXM:user/release-keys",
-    "bootId": "5CD68ED7-25E9-7866-B964-273D4874D3E7",
-    "procVersion": "Linux version 3.0.31-ndd6pS19 (android-build@xxx.xxx.xxx.xxx.com)",
+    "fingerprint": "Redmi/cannon/cannon:10/QP1A.190711.020/V12.0.11.0.QJECNXM:user/release-keys",
+    "bootId": "FB3E69EC-CA01-3EDA-BD3F-43CC788D8063",
+    "procVersion": "Linux version 3.0.31-c6UnucPY (android-build@xxx.xxx.xxx.xxx.com)",
     "baseBand": "",
     "version": {
       "incremental": "5891938",
@@ -22,8 +22,8 @@
     "macAddress": "02:00:00:00:00:00",
     "wifiBSSID": "02:00:00:00:00:00",
     "wifiSSID": "<unknown ssid>",
-    "imsiMd5": "9897fa61a6e62c2a892ec02b3f3f4833",
-    "imei": "861391323127994",
+    "imsiMd5": "c91c5c3ab92c835323dc4f7437181fec",
+    "imei": "868972585443113",
     "apn": "wifi"
   }
 }

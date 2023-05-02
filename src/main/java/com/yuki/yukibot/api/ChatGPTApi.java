@@ -26,6 +26,10 @@ public class ChatGPTApi {
                 .header("Authorization", "Bearer " + API_KEY)
                 .body(body)
                 .execute();
+        log.info("chatgpt请求结果===>{}", JSONUtil.toJsonStr(response));
+        if (429 == response.getStatus()){
+            return new ExecuteRet(response.isOk(), "请求次数过多", null, response.getStatus());
+        }
         ChatCompletionResponse bean = JSONUtil.toBean(response.body(), ChatCompletionResponse.class);
         return new ExecuteRet(response.isOk(), bean.getChoices().get(0).getMessage().getContent(), null, 200);
     }
