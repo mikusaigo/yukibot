@@ -34,11 +34,12 @@ qqbot:
       - 694908428
   allowed-friends:
     # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
-    mode: unlimited
-#    mode: id
+#    mode: unlimited
+    mode: id
 #    mode: friend-group
     ids:
       - 1418692441
+      - 1799961533
     friend-groups:
       ids:
         - 0

@@ -77,7 +77,7 @@ public class QQBotConfig {
 
         private List<Long> ids;
 
-        private Map<String, List<Object>> friendGroups;
+        private Map<String, List<String>> friendGroups;
 
         public String getMode() {
             return mode;
@@ -95,18 +95,18 @@ public class QQBotConfig {
             this.ids = ids;
         }
 
-        public Map<String, List<Object>> getFriendGroups() {
+        public Map<String, List<String>> getFriendGroups() {
             if (CollUtil.isEmpty(friendGroups)) {
                 return null;
             }
-            List<Object> friendGroupIds = friendGroups.get("ids");
+            List<String> friendGroupIds = friendGroups.get("ids");
             if (CollUtil.isEmpty(friendGroupIds)) {
-                friendGroupIds.add(0);
+                friendGroupIds.add("0");
             }
             return friendGroups;
         }
 
-        public void setFriendGroups(Map<String, List<Object>> friendGroups) {
+        public void setFriendGroups(Map<String, List<String>> friendGroups) {
             this.friendGroups = friendGroups;
         }
     }
