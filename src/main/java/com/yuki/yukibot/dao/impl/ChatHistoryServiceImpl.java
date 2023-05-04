@@ -6,15 +6,14 @@ import cn.hutool.core.text.StrPool;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.dao.ChatHistoryService;
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
-import com.yuki.yukibot.util.RoleEnum;
 import com.yuki.yukibot.util.constants.ChatConstants;
 import com.yuki.yukibot.util.constants.RedisConstants;
+import com.yuki.yukibot.util.enums.RoleEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 

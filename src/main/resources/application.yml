@@ -11,4 +11,36 @@ spring:
 server:
   port: 8010
 
+chatgpt:
+  api:
+    url: https://api.openai.com/v1/chat/completions
+    key: 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
+  model: gpt-3.5-turbo
+  max-tokens: 2048
+  frequency-penalty: 0
+  presence-penalty: 0
+  temperature: 0.7
+  stream: false
 
+qqbot:
+  id: 2074312668
+  password: 52yukinosuki
+  allowed-groups:
+    # mode为配置条件，如根据qq群号分组（id）或不限制（unlimited）
+    mode: id
+    ids:
+      - 992825862
+      - 917016978
+      - 694908428
+  allowed-friends:
+    # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
+    mode: unlimited
+#    mode: id
+#    mode: friend-group
+    ids:
+      - 1418692441
+    friend-groups:
+      ids:
+        - 0
+      name:
+        - 我的好友

@@ -1,4 +1,4 @@
-package com.yuki.yukibot.util;
+package com.yuki.yukibot.util.enums;
 
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
 

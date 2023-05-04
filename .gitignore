@@ -34,3 +34,6 @@ build/
 /cache/account.secrets
 /cache/session.bin
 /cache/servers.json
+/cache/validator.bin
+/src/main/resources/history/history.json
+/src/main/resources/history/

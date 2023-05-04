@@ -5,11 +5,13 @@ import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.text.StrPool;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.api.ChatGPTApi;
+import com.yuki.yukibot.config.QQBotConfig;
 import com.yuki.yukibot.dao.ChatHistoryService;
+import com.yuki.yukibot.exception.YukiBotException;
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
-import com.yuki.yukibot.model.chatgpt.ChatUsage;
-import com.yuki.yukibot.util.constants.BotConstants;
-import com.yuki.yukibot.util.constants.ChatConstants;
+import com.yuki.yukibot.util.constants.QQBotAllowedModeConstants;
+import com.yuki.yukibot.util.enums.RoleEnum;
+import com.yuki.yukibot.util.msgsender.GroupMessageSender;
 import kotlin.coroutines.CoroutineContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
+import net.mamoe.mirai.event.events.FriendMessageEvent;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
@@ -33,11 +36,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -46,17 +46,9 @@ public class QQRobot extends SimpleListenerHost {
 
     private final ChatGPTApi chatGPTApi;
 
-    protected static final Map<Group, Map<Member, List<ChatMessage>>> MEMBER_CHAT_CACHE = new HashMap<>();
-
-    protected static final Map<Long, Boolean> AUTHORIZATION_GROUP = new HashMap<>();
+    private final QQBotConfig qqBotConfig;
 
     private final ChatHistoryService chatHistoryService;
-
-    static {
-        AUTHORIZATION_GROUP.put(992825862L, Boolean.TRUE);
-        AUTHORIZATION_GROUP.put(917016978L, Boolean.TRUE);
-        AUTHORIZATION_GROUP.put(694908428L, Boolean.TRUE);
-    }
 
     @PostConstruct
     public void initBot() {
@@ -67,7 +59,7 @@ public class QQRobot extends SimpleListenerHost {
         botConfiguration.setDeviceInfo(bot -> DeviceInfo.from(new File("src/main/resources/device/device.json")));
         // 创建机器人实例
 
-        Bot bot = BotFactory.INSTANCE.newBot(BotConstants.BOT_QQ, BotConstants.BOT_PASSWORD, botConfiguration);
+        Bot bot = BotFactory.INSTANCE.newBot(qqBotConfig.getId(), qqBotConfig.getPassword(), botConfiguration);
         // 注册事件监听器
         bot.getEventChannel().registerListenerHost(this);
         // 启动机器人
@@ -78,17 +70,30 @@ public class QQRobot extends SimpleListenerHost {
     @EventHandler
     public void onGroupMessage(GroupMessageEvent event) {
         Group group = event.getGroup();
-        if (Boolean.TRUE.equals(AUTHORIZATION_GROUP.get(group.getId()))) {
-            MessageChain message = event.getMessage();
-            MessageContent messageContent = message.get(MessageContent.Key);
-            if (messageContent instanceof At) {
-                At at = (At) messageContent;
-                if (at.getTarget() == BotConstants.BOT_QQ) {
-                    String prompt = message.contentToString();
-                    sendMsg(event, prompt);
-                }
+        if (QQBotAllowedModeConstants.ID.equals(qqBotConfig.getAllowedGroups().getMode())) {
+            if (qqBotConfig.getAllowedGroups().getIds().contains(group.getId())) {
+                groupChat(event);
+            }
+        }else {
+            groupChat(event);
+        }
+    }
+
+    private void groupChat(GroupMessageEvent event) {
+        MessageChain message = event.getMessage();
+        MessageContent messageContent = message.get(MessageContent.Key);
+        if (messageContent instanceof At) {
+            At at = (At) messageContent;
+            if (at.getTarget() == qqBotConfig.getId()) {
+                String prompt = message.contentToString();
+                sendMsg(event, prompt);
             }
         }
+    }
+
+    @EventHandler
+    public void onFriendMessage(FriendMessageEvent event) {
+
     }
 
     public void sendMsg(GroupMessageEvent event, String message) {
@@ -107,10 +112,13 @@ public class QQRobot extends SimpleListenerHost {
             return;
         } else {
             try {
+                message = ChatUtil.getRealMsg(message, false);
                 ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), message);
                 clearedHistoryList.add(chatMessage);
                 result = chatGPTApi.chat(clearedHistoryList);
                 saveCache(group, sender, message, result, false);
+            } catch (YukiBotException e) {
+                result = e.getMessage();
             } catch (RuntimeException e) {
                 e.printStackTrace();
                 result = "网络不太好，请稍后重试";

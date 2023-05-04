@@ -1,7 +1,7 @@
-package com.yuki.yukibot.util;
+package com.yuki.yukibot.util.msgsender;
 
 import cn.hutool.core.text.StrPool;
-import com.yuki.yukibot.util.constants.ReplyModeEnum;
+import com.yuki.yukibot.util.enums.ReplyModeEnum;
 import lombok.extern.slf4j.Slf4j;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
