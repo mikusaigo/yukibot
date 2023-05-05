@@ -24,24 +24,29 @@ chatgpt:
 
 qqbot:
   id: 2074312668
-  password: 52yukinosuki
-  allowed-groups:
-    # mode为配置条件，如根据qq群号分组（id）或不限制（unlimited）
-    mode: id
-    ids:
-      - 992825862
-      - 917016978
-      - 694908428
-  allowed-friends:
-    # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
-#    mode: unlimited
-    mode: id
-#    mode: friend-group
-    ids:
-      - 1418692441
-      - 1799961533
-    friend-groups:
+  password: yukino52
+  authority:
+    add-from-allowed-groups: true
+    add-without-permission: true
+    token-message: yuki
+    allowed-groups:
+      # mode为配置条件，如根据qq群号分组（id）或不限制（unlimited）
+      mode: id
       ids:
-        - 0
-      name:
-        - 我的好友
+        - 992825862
+        - 917016978
+        - 694908428
+    allowed-friends:
+      # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
+#      mode: unlimited
+      mode: id
+#      mode: friend-group
+      ids:
+        - 1418692441
+        - 1799961533
+      friend-groups:
+        ids:
+          - 0
+        name:
+          - 我的好友
+    allowed-strangers: true

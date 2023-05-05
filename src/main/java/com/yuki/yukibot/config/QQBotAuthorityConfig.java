@@ -9,28 +9,38 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@ConfigurationProperties("qqbot")
-public class QQBotConfig {
+@ConfigurationProperties(prefix = "qqbot.authority")
+public class QQBotAuthorityConfig {
 
-    private Long id;
-    private String password;
+    private Boolean addWithoutPermission;
+    private Boolean addFromAllowedGroups;
+    private String tokenMessage;
     private AllowedGroups allowedGroups;
     private AllowedFriends allowedFriends;
+    private Boolean allowedStrangers;
 
-    public Long getId() {
-        return id;
+    public Boolean getAddWithoutPermission() {
+        return addWithoutPermission;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setAddWithoutPermission(Boolean addWithoutPermission) {
+        this.addWithoutPermission = addWithoutPermission;
     }
 
-    public String getPassword() {
-        return password;
+    public String getTokenMessage() {
+        return tokenMessage;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setTokenMessage(String tokenMessage) {
+        this.tokenMessage = tokenMessage;
+    }
+
+    public Boolean getAddFromAllowedGroups() {
+        return addFromAllowedGroups;
+    }
+
+    public void setAddFromAllowedGroups(Boolean addFromAllowedGroups) {
+        this.addFromAllowedGroups = addFromAllowedGroups;
     }
 
     public AllowedGroups getAllowedGroups() {
@@ -47,6 +57,14 @@ public class QQBotConfig {
 
     public void setAllowedFriends(AllowedFriends allowedFriends) {
         this.allowedFriends = allowedFriends;
+    }
+
+    public Boolean getAllowedStrangers() {
+        return allowedStrangers;
+    }
+
+    public void setAllowedStrangers(Boolean allowedStrangers) {
+        this.allowedStrangers = allowedStrangers;
     }
 
     public static class AllowedGroups {
