@@ -1,22 +1,21 @@
 package com.yuki.yukibot.dao.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.text.CharSequenceUtil;
-import cn.hutool.core.text.StrPool;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.dao.ChatHistoryService;
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
+import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.constants.ChatConstants;
-import com.yuki.yukibot.util.constants.RedisConstants;
 import com.yuki.yukibot.util.enums.RoleEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 聊天历史记录服务
@@ -30,32 +29,30 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
 
     /**
      * 在缓存中根据群号，群成员记录历史记录
-     * @param groupId 群号
-     * @param memberId 群成员qq号
+     *
+     * @param cacheKey    群组记录key
      * @param jsonMsgList 历史记录的json格式字符串
      */
-    public void saveMsgHistory(Long groupId, Long memberId, String jsonMsgList){
-        String key = RedisConstants.BASE_SYS_KEY + RedisConstants.GROUP_MSG_KEY + CharSequenceUtil.join(StrPool.COLON, groupId, memberId);
-        redisTemplate.opsForValue().set(key, jsonMsgList);
+    public void saveMsgHistory(String cacheKey, String jsonMsgList) {
+        redisTemplate.opsForValue().set(cacheKey, jsonMsgList, 1, TimeUnit.HOURS);
     }
 
     /**
      * 根据群号，群成员qq号获取历史记录
-     * @param groupId 群号
-     * @param memberId 群成员qq号
-     * @return
+     *
+     * @param cacheKey 群组记录key
+     * @return 历史记录的json格式字符串
      */
     @Override
-    public String getMsgHistory(Long groupId, Long memberId) {
-        String key = RedisConstants.BASE_SYS_KEY + RedisConstants.GROUP_MSG_KEY + CharSequenceUtil.join(StrPool.COLON, groupId, memberId);
-        Object value = redisTemplate.opsForValue().get(key);
+    public String getMsgHistory(String cacheKey) {
+        Object value = redisTemplate.opsForValue().get(cacheKey);
         return String.valueOf(value);
     }
 
     @Override
-    public List<ChatMessage> getMsgHistoryList(Long groupId, Long memberId) {
-        String msgHistory = getMsgHistory(groupId, memberId);
-        if ("null".equals(msgHistory)){
+    public List<ChatMessage> getMsgHistoryList(String cacheKey) {
+        String msgHistory = this.getMsgHistory(cacheKey);
+        if ("null".equals(msgHistory)) {
             return new LinkedList<>();
         }
         return JSONUtil.toList(msgHistory, ChatMessage.class);
@@ -70,31 +67,51 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
     }
 
     @Override
-    public List<ChatMessage> clearHistory(Long groupId, Long memberId, List<ChatMessage> historyList) {
-        int size = historyList.size();
-        List<ChatMessage> clearedHistoryList;
-        if (hasSysMsg(historyList)){
-            if (size > ChatConstants.MAX_ONCE_CHAT_TIME + 1){
-                clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 2, size);
-                clearedHistoryList.add(0, historyList.get(0));
-                log.info("包含设定信息的数据,聊天记录折半,群组Id===>{}, 群员Id===>{}", groupId, memberId);
-            }else {
-                return historyList;
-            }
-        }else {
-            if (size > ChatConstants.MAX_ONCE_CHAT_TIME){
-                clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 1, size);
-                log.info("不包含设定信息的数据,聊天记录折半,群组Id===>{}, 群员Id===>{}", groupId, memberId);
-            }else {
-                return historyList;
-            }
+    public List<ChatMessage> clearHistory(String cacheKey, List<ChatMessage> historyList, CacheClearStrategyEnum strategyEnum) {
+        List<ChatMessage> clearedHistoryList = null;
+        switch (strategyEnum) {
+            case ALL:
+                redisTemplate.delete(cacheKey);
+                break;
+            case ALL_WITHOUT_SYS:
+                if (CollUtil.isNotEmpty(historyList)) {
+                    if (hasSysMsg(historyList)) {
+                        String jsonHistory = JSONUtil.toJsonStr(historyList.get(0));
+                        saveMsgHistory(cacheKey, jsonHistory);
+                        clearedHistoryList = Collections.singletonList(historyList.get(0));
+                    }
+                }
+                break;
+            case FARTHEST_HALF:
+                clearedHistoryList = clearFarthestByHalf(historyList);
+                break;
+            default:
+                break;
         }
-        saveMsgHistory(groupId, memberId, JSONUtil.toJsonStr(clearedHistoryList));
+        saveMsgHistory(cacheKey, JSONUtil.toJsonStr(clearedHistoryList));
         return clearedHistoryList;
     }
 
-    public String getGroupCacheKey(Long groupId, Long memberId){
-        return RedisConstants.BASE_SYS_KEY + RedisConstants.GROUP_MSG_KEY + CharSequenceUtil.join(StrPool.COLON, groupId, memberId);
+    public List<ChatMessage> clearFarthestByHalf(List<ChatMessage> historyList) {
+        int size = historyList.size();
+        List<ChatMessage> clearedHistoryList;
+        if (hasSysMsg(historyList)) {
+            if (size > ChatConstants.MAX_ONCE_CHAT_TIME + 1) {
+                clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 2, size);
+                clearedHistoryList.add(0, historyList.get(0));
+                log.info("包含设定信息的数据,聊天记录折半");
+            } else {
+                return historyList;
+            }
+        } else {
+            if (size > ChatConstants.MAX_ONCE_CHAT_TIME) {
+                clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 1, size);
+                log.info("不包含设定信息的数据,聊天记录折半");
+            } else {
+                return historyList;
+            }
+        }
+        return clearedHistoryList;
     }
 
 

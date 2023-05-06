@@ -6,21 +6,22 @@ import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.api.ChatGPTApi;
 import com.yuki.yukibot.dao.ChatHistoryService;
 import com.yuki.yukibot.exception.YukiBotException;
+import com.yuki.yukibot.model.chatgpt.ChatCache;
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
 import com.yuki.yukibot.util.AvailableChecker;
+import com.yuki.yukibot.util.CacheKeyBuilder;
 import com.yuki.yukibot.util.ChatUtil;
+import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.enums.RoleEnum;
 import com.yuki.yukibot.util.msgsender.GroupMessageSender;
 import com.yuki.yukibot.util.msgsender.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.mamoe.mirai.Mirai;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
-import net.mamoe.mirai.event.events.FriendAddEvent;
 import net.mamoe.mirai.event.events.FriendInputStatusChangedEvent;
 import net.mamoe.mirai.event.events.FriendMessageEvent;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
@@ -30,7 +31,6 @@ import net.mamoe.mirai.event.events.StrangerMessageEvent;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageContent;
-import net.mamoe.mirai.utils.BotConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -70,7 +70,7 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
         if (messageContent instanceof At) {
             At at = (At) messageContent;
             if (at.getTarget() == event.getBot().getId()) {
-                sendMsg(event, message);
+                sendGroupMsg(event);
             }
         }
     }
@@ -83,7 +83,7 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
         if (!available){
             return;
         }
-        friendChat(friend, event.getMessage());
+        friendChat(event);
     }
 
     @EventHandler
@@ -104,13 +104,12 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
     public void onFriendInputMessage(FriendInputStatusChangedEvent event) {
         boolean inputting = event.getInputting();
         if (!inputting){
-            MessageSender.sendMessage(event.getFriend(), "要离开了喵？");
+//            MessageSender.sendMessage(event.getFriend(), "要离开了喵？");
         }
     }
 
-    public void friendChat(Friend friend, MessageChain messageChain){
-        ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), messageChain.contentToString());
-        MessageSender.sendMessage(friend, chatGPTApi.chat(Collections.singletonList(chatMessage)));
+    public void friendChat(FriendMessageEvent event){
+        sendFriendMsg(event);
     }
 
     @EventHandler
@@ -125,28 +124,48 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
 
     }
 
-    public void sendMsg(GroupMessageEvent event, MessageChain messageChain) {
+    public void sendGroupMsg(GroupMessageEvent event) {
         Group group = event.getGroup();
         Member sender = event.getSender();
+        MessageChain messageChain = event.getMessage();
+        String groupCacheKey = CacheKeyBuilder.buildGroupKey(group.getId(), sender.getId());
+        String result = getResult(groupCacheKey, messageChain);
+        if (null == result){
+            return;
+        }
+        GroupMessageSender.sendQuoteAtMsg(group, sender, messageChain, result);
+    }
+
+    public void sendFriendMsg(FriendMessageEvent event){
+        Friend friend = event.getSender();
+        MessageChain messageChain = event.getMessage();
+        String friendCacheKey = CacheKeyBuilder.buildFriendKey(friend.getId());
+        String result = getResult(friendCacheKey, messageChain);
+        if (null == result){
+            return;
+        }
+        MessageSender.sendMessage(friend, result);
+    }
+
+    private String getResult(String cacheKey, MessageChain messageChain) {
         String message = messageChain.contentToString();
         String result;
         boolean sysMsg = ChatUtil.isSysMsg(message);
-        List<ChatMessage> msgHistoryList = chatHistoryService.getMsgHistoryList(group.getId(), sender.getId());
-        List<ChatMessage> clearedHistoryList = chatHistoryService.clearHistory(group.getId(), sender.getId(), msgHistoryList);
+        message = ChatUtil.getRealMsg(message, sysMsg);
+        if (CharSequenceUtil.isBlank(message)){
+            return null;
+        }
+        List<ChatMessage> msgHistoryList = chatHistoryService.getMsgHistoryList(cacheKey);
+        List<ChatMessage> clearedHistoryList = chatHistoryService.clearHistory(cacheKey, msgHistoryList, CacheClearStrategyEnum.FARTHEST_HALF);
         if (sysMsg) {
-            message = ChatUtil.getRealMsg(message, true);
-            if (CharSequenceUtil.isNotBlank(message)) {
-                GroupMessageSender.sendQuoteAtMsg(group, sender, event.getMessage(), "好的");
-                saveCache(group.getId(), sender.getId(), message, null, true);
-            }
-            return;
+            result = "好的";
+            saveCache(cacheKey, new ChatCache(message, null, true));
         } else {
             try {
-                message = ChatUtil.getRealMsg(message, false);
                 ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), message);
                 clearedHistoryList.add(chatMessage);
                 result = chatGPTApi.chat(clearedHistoryList);
-                saveCache(group.getId(), sender.getId(), message, result, false);
+                saveCache(cacheKey, new ChatCache(message, result, false));
             } catch (YukiBotException e) {
                 result = e.getMessage();
             } catch (RuntimeException e) {
@@ -154,28 +173,29 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
                 result = "网络不太好，请稍后重试";
             }
         }
-        GroupMessageSender.sendQuoteAtMsg(group, sender, messageChain, result);
-
+        return result;
     }
 
-
     /**
-     * 保存聊天记录
+     * 保存群聊聊天记录
      *
-     * @param groupId    群组
-     * @param memberId   群员
-     * @param userMsg    用户消息
-     * @param chatGptMsg chatGpt消息
+     * @param cacheKey 聊天记录key
+     * @param chatCache  聊天缓存实体
      */
-    public void saveCache(Long groupId, Long memberId, String userMsg, String chatGptMsg, boolean isSysMsg) {
-        List<ChatMessage> msgHistoryList = chatHistoryService.getMsgHistoryList(groupId, memberId);
-        ChatMessage user = new ChatMessage(RoleEnum.USER.getRole(), userMsg);
-        ChatMessage system = new ChatMessage(RoleEnum.SYSTEM.getRole(), userMsg);
-        ChatMessage assistant = new ChatMessage(RoleEnum.ASSISTANT.getRole(), chatGptMsg);
+    public void saveCache(String cacheKey, ChatCache chatCache) {
+        List<ChatMessage> msgHistoryList = chatHistoryService.getMsgHistoryList(cacheKey);
+        String cache = getJsonStrCache(chatCache, msgHistoryList);
+        chatHistoryService.saveMsgHistory(cacheKey, cache);
+    }
+
+    private static String getJsonStrCache(ChatCache chatCache, List<ChatMessage> msgHistoryList) {
+        ChatMessage user = new ChatMessage(RoleEnum.USER.getRole(), chatCache.getChatMsg());
+        ChatMessage system = new ChatMessage(RoleEnum.SYSTEM.getRole(), chatCache.getUserMsg());
+        ChatMessage assistant = new ChatMessage(RoleEnum.ASSISTANT.getRole(), chatCache.getChatMsg());
         if (CollUtil.isEmpty(msgHistoryList)) {
             msgHistoryList = new LinkedList<>();
         }
-        if (isSysMsg) {
+        if (chatCache.isSysMsg()) {
             ChatMessage first = CollUtil.getFirst(msgHistoryList);
             if (null != first && RoleEnum.SYSTEM.getRole().equals(first.getRole())) {
                 msgHistoryList.set(0, system);
@@ -185,8 +205,6 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
             msgHistoryList.add(user);
             msgHistoryList.add(assistant);
         }
-        String cache = JSONUtil.toJsonStr(msgHistoryList);
-        chatHistoryService.saveMsgHistory(groupId, memberId, cache);
-
+        return JSONUtil.toJsonStr(msgHistoryList);
     }
 }

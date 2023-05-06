@@ -7,7 +7,15 @@ public class ChatUtil {
 
     public static boolean isSysMsg(String message){
         String trimMsg = message.trim();
-        String sysPattern = "sys[：:]\\s?";
+        String sysPattern = "^@\\d{5,}\\s?sys[：:]\\s?";
+        Pattern pattern = Pattern.compile(sysPattern);
+        Matcher matcher = pattern.matcher(trimMsg);
+        return matcher.find();
+    }
+
+    public static boolean getClearType(String message){
+        String trimMsg = message.trim();
+        String sysPattern = "^@\\d{5,}\\s?[清除缓存|clear](\\s[全部|all])?$";
         Pattern pattern = Pattern.compile(sysPattern);
         Matcher matcher = pattern.matcher(trimMsg);
         return matcher.find();

@@ -11,6 +11,7 @@ import net.mamoe.mirai.BotFactory;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.utils.BotConfiguration;
 import net.mamoe.mirai.utils.DeviceInfo;
+import net.mamoe.mirai.utils.StandardCharImageLoginSolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import xyz.cssxsh.mirai.device.MiraiDeviceGenerator;
@@ -33,14 +34,14 @@ public class QQRobot extends SimpleListenerHost {
     @PostConstruct
     public void initBot() {
         BotConfiguration botConfiguration = new BotConfiguration();
-        botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_PAD);
+        botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_WATCH);
         botConfiguration.setAutoReconnectOnForceOffline(true);
         botConfiguration.setLoginCacheEnabled(true);
-        MiraiDeviceGenerator miraiDeviceGenerator = new MiraiDeviceGenerator();
-        DeviceInfo deviceInfo = miraiDeviceGenerator.generate();
-        String jsonStr = JSONUtil.toJsonStr(deviceInfo);
-        log.info("device_info===> {}", jsonStr);
-        botConfiguration.setDeviceInfo(bot -> deviceInfo);
+//        MiraiDeviceGenerator miraiDeviceGenerator = new MiraiDeviceGenerator();
+//        DeviceInfo deviceInfo = miraiDeviceGenerator.generate();
+//        String jsonStr = JSONUtil.toJsonStr(deviceInfo);
+//        log.info("device_info===> {}", jsonStr);
+        botConfiguration.setDeviceInfo(bot -> DeviceInfo.from(new File("src/main/resources/device/device.json")));
         // 创建机器人实例
 
         Bot bot = BotFactory.INSTANCE.newBot(qqBotNormalConfig.getId(), qqBotNormalConfig.getPassword(), botConfiguration);
