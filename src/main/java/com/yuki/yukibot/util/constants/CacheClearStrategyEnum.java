@@ -1,5 +1,8 @@
 package com.yuki.yukibot.util.constants;
 
+/**
+ * 缓存清理策略枚举
+ */
 public enum CacheClearStrategyEnum {
 
     ALL("ALL", "删除所有记录"),

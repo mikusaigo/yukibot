@@ -1,5 +1,8 @@
 package com.yuki.yukibot.util.constants;
 
+/**
+ * QQbot使用限制方式常量类
+ */
 public class QQBotAllowedModeConstants {
 
     // 通过id过滤，id为qq号或qq群组号

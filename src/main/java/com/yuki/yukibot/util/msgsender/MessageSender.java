@@ -1,6 +1,5 @@
 package com.yuki.yukibot.util.msgsender;
 
-import net.mamoe.mirai.contact.Stranger;
 import net.mamoe.mirai.contact.User;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;

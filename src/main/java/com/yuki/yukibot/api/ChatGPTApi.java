@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.net.SocketException;
 import java.util.List;
 
 @Slf4j
@@ -22,6 +21,12 @@ public class ChatGPTApi {
 
     private final ChatGptConfig chatGptConfig;
 
+    /**
+     * post方式请求chatgpt接口
+     * @param body 请求接口时携带的chatgpt参数，如模型，最大token等
+     * @see ChatCompletionRequest
+     * @return 响应数据
+     */
     public ChatCompletionResponse postChatGpt(String body) {
         HttpResponse response = HttpUtil.createPost(chatGptConfig.getApi().getUrl())
                 .header("Content-Type", "application/json;charset=utf-8")
@@ -34,8 +39,12 @@ public class ChatGPTApi {
         return JSONUtil.toBean(chatgptResp, ChatCompletionResponse.class);
     }
 
-
-    public String chat(List<ChatMessage> messages) {
+    /**
+     * 调用chatgpt接口聊天
+     * @param messages 请求chatgpt时携带的消息参数，是包含role和content的消息集合
+     * @return 响应结果实体
+     */
+    public ChatCompletionResponse chat(List<ChatMessage> messages) {
         ChatCompletionRequest chatCompletionRequest = new ChatCompletionRequest()
                 .setModel(chatGptConfig.getModel())
                 .setMessages(messages)
@@ -44,8 +53,7 @@ public class ChatGPTApi {
                 .setFrequencyPenalty(chatGptConfig.getFrequencyPenalty())
                 .setTemperature(chatGptConfig.getTemperature())
                 .setStream(chatGptConfig.getStream());
-        ChatCompletionResponse result = postChatGpt(JSONUtil.toJsonStr(chatCompletionRequest));
-        return result.getChoices().get(0).getMessage().getContent();
+        return postChatGpt(JSONUtil.toJsonStr(chatCompletionRequest));
     }
 
 }

@@ -3,7 +3,7 @@ package com.yuki.yukibot.dao.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.dao.ChatHistoryService;
-import com.yuki.yukibot.model.chatgpt.ChatMessage;
+import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
 import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.constants.ChatConstants;
 import com.yuki.yukibot.util.enums.RoleEnum;
@@ -49,26 +49,50 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
         return String.valueOf(value);
     }
 
+    /**
+     * 获取聊天记录的实体集合
+     *
+     * @param cacheKey 聊天记录key
+     * @return 聊天记录实体集合
+     */
     @Override
-    public List<ChatMessage> getMsgHistoryList(String cacheKey) {
+    public List<ChatMessageCache> getMsgHistoryList(String cacheKey) {
         String msgHistory = this.getMsgHistory(cacheKey);
         if ("null".equals(msgHistory)) {
             return new LinkedList<>();
         }
-        return JSONUtil.toList(msgHistory, ChatMessage.class);
+        return JSONUtil.toList(msgHistory, ChatMessageCache.class);
     }
 
+    /**
+     * 检测历史记录中是否存在sys设定消息
+     *
+     * @param historyList 历史记录
+     * @return 是否存在sys设定消息
+     */
     @Override
-    public boolean hasSysMsg(List<ChatMessage> historyList) {
+    public boolean hasSysMsg(List<ChatMessageCache> historyList) {
         if (CollUtil.isEmpty(historyList)) {
             return false;
         }
         return RoleEnum.isSysRoleMsg(historyList.get(0));
     }
 
+    /**
+     * 根据配置及策略清理聊天记录
+     *
+     * @param cacheKey     聊天记录key
+     * @param strategyEnum 记录清除策略
+     * @return 删除后的历史记录集合
+     */
     @Override
-    public List<ChatMessage> clearHistory(String cacheKey, List<ChatMessage> historyList, CacheClearStrategyEnum strategyEnum) {
-        List<ChatMessage> clearedHistoryList = null;
+    public List<ChatMessageCache> clearHistory(String cacheKey, CacheClearStrategyEnum strategyEnum) {
+        List<ChatMessageCache> historyList = getMsgHistoryList(cacheKey);
+        // 记录清理后的历史记录
+        List<ChatMessageCache> clearedHistoryList = null;
+        // ALL：清理当前用户的全部历史记录
+        // ALL_WITHOUT_SYS；清理当前用户的历史记录，但保留设定信息
+        // FARTHEST_HALF：根据配置，从记录的最远部分开始向近处清理
         switch (strategyEnum) {
             case ALL:
                 redisTemplate.delete(cacheKey);
@@ -83,20 +107,31 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 }
                 break;
             case FARTHEST_HALF:
-                clearedHistoryList = clearFarthestByHalf(historyList);
+                clearedHistoryList = clearFarthestByTokens(historyList);
                 break;
             default:
                 break;
         }
+        // 更新缓存为清理后的历史记录
         saveMsgHistory(cacheKey, JSONUtil.toJsonStr(clearedHistoryList));
         return clearedHistoryList;
     }
 
-    public List<ChatMessage> clearFarthestByHalf(List<ChatMessage> historyList) {
+    /**
+     * 根据配置，从记录的最远部分开始向近处清理
+     *
+     * @param historyList 用户历史记录
+     * @return 清理后的历史记录
+     * @see ChatConstants 清理的具体数量配置
+     */
+    public List<ChatMessageCache> clearFarthestByTokens(List<ChatMessageCache> historyList) {
         int size = historyList.size();
-        List<ChatMessage> clearedHistoryList;
+        List<ChatMessageCache> clearedHistoryList;
+        // 如果历史记录中不包含sys设定记录，则当历史记录数大于等于设定的最大记录数时，历史记录折半，
+        // 如果历史记录中包含sys设定记录，则当历史记录数大于等于设定的最大记录数 + 1时，历史记录折半，
+        // 如果没有满足条件，直接返回原历史记录集合
         if (hasSysMsg(historyList)) {
-            if (size > ChatConstants.MAX_ONCE_CHAT_TIME + 1) {
+            if (size >= ChatConstants.MAX_ONCE_CHAT_TIME + 1) {
                 clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 2, size);
                 clearedHistoryList.add(0, historyList.get(0));
                 log.info("包含设定信息的数据,聊天记录折半");
@@ -104,7 +139,7 @@ public class ChatHistoryServiceImpl implements ChatHistoryService {
                 return historyList;
             }
         } else {
-            if (size > ChatConstants.MAX_ONCE_CHAT_TIME) {
+            if (size >= ChatConstants.MAX_ONCE_CHAT_TIME) {
                 clearedHistoryList = CollUtil.sub(historyList, ChatConstants.REMOVE_HISTORY_SIZE + 1, size);
                 log.info("不包含设定信息的数据,聊天记录折半");
             } else {

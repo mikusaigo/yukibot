@@ -13,21 +13,8 @@ public class ChatUtil {
         return matcher.find();
     }
 
-    public static boolean getClearType(String message){
-        String trimMsg = message.trim();
-        String sysPattern = "^@\\d{5,}\\s?[清除缓存|clear](\\s[全部|all])?$";
-        Pattern pattern = Pattern.compile(sysPattern);
-        Matcher matcher = pattern.matcher(trimMsg);
-        return matcher.find();
-    }
-
-    public static String getRealMsg(String message, boolean isSysMsg){
-//        String pattern = "\\[mirai:[a-z]+:\\d{5,}]\\s+(.*)";
-        String pattern = "^@\\d{5,}\\s?(.*)";
-        if (isSysMsg){
-//            pattern = "\\[mirai:[a-z]+:\\d{5,}]\\ssys[:：]?\\s+(.*)";
-            pattern = "^@\\d{5,}\\s?sys[:：]?\\s?(.*)";
-        }
+    public static String getRealMsg(String message){
+        String pattern = "^(?:@\\d{5,}\\s?)?(?:sys[:：]\\s?)?(.*)";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(message);
         if (m.find()) {

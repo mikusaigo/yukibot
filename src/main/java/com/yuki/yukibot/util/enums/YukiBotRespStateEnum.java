@@ -1,5 +1,8 @@
 package com.yuki.yukibot.util.enums;
 
+/**
+ * yukibot系统响应码枚举
+ */
 public enum YukiBotRespStateEnum {
 
     OK(200, "成功喵"),

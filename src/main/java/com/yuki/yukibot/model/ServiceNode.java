@@ -7,6 +7,7 @@ import java.util.Map;
 
 @Getter
 @Setter
+@Deprecated
 public class ServiceNode {
 
     private String address;

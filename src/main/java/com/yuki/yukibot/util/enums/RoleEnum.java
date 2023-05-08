@@ -2,6 +2,9 @@ package com.yuki.yukibot.util.enums;
 
 import com.yuki.yukibot.model.chatgpt.ChatMessage;
 
+/**
+ * chatgpt api请求消息的角色枚举
+ */
 public enum RoleEnum {
 
     SYSTEM("system", "系统"),

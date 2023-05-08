@@ -1,6 +1,6 @@
 package com.yuki.yukibot.dao;
 
-import com.yuki.yukibot.model.chatgpt.ChatMessage;
+import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
 import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
 
 import java.util.List;
@@ -26,21 +26,21 @@ public interface ChatHistoryService {
      * @param cacheKey 聊天记录key
      * @return 聊天记录实体集合
      */
-    List<ChatMessage> getMsgHistoryList(String cacheKey);
+    List<ChatMessageCache> getMsgHistoryList(String cacheKey);
 
     /**
      * 检测历史记录中是否存在sys设定消息
      * @param historyList 历史记录
      * @return 是否存在sys设定消息
      */
-    boolean hasSysMsg(List<ChatMessage> historyList);
+    boolean hasSysMsg(List<ChatMessageCache> historyList);
 
     /**
-     * 根据配置清理部分聊天记录
-     * @param cacheKey 聊天记录key
-     * @param historyList 历史记录
-     * @param strategyEnum 记录了清除策略
+     * 根据配置及策略清理聊天记录
+     *
+     * @param cacheKey     聊天记录key
+     * @param strategyEnum 记录清除策略
      * @return 删除后的历史记录集合
      */
-    List<ChatMessage> clearHistory(String cacheKey, List<ChatMessage> historyList, CacheClearStrategyEnum strategyEnum);
+    List<ChatMessageCache> clearHistory(String cacheKey, CacheClearStrategyEnum strategyEnum);
 }

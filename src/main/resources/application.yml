@@ -26,9 +26,13 @@ qqbot:
   id: 2074312668
   password: yukino52
   authority:
+    #是否允许从受允许的群内添加bot为好友
     add-from-allowed-groups: true
+    #是否允许陌生人添加好友
     add-without-permission: true
+    # 添加机器人为好友时需要填写的验证信息
     token-message: yuki
+    # 允许的群组
     allowed-groups:
       # mode为配置条件，如根据qq群号分组（id）或不限制（unlimited）
       mode: id
@@ -36,17 +40,21 @@ qqbot:
         - 992825862
         - 917016978
         - 694908428
+    # 允许的好友
     allowed-friends:
       # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
 #      mode: unlimited
       mode: id
 #      mode: friend-group
+      #配置为好友qq号
       ids:
         - 1418692441
         - 1799961533
       friend-groups:
+        # 配置为好友分组的组id，0为【我的好友】分组
         ids:
           - 0
         name:
           - 我的好友
-    allowed-strangers: true
+    #是否允许非好友
+    allowed-strangers: false
