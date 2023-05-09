@@ -4,7 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.dao.ChatHistoryService;
 import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
-import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
+import com.yuki.yukibot.util.enums.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.constants.ChatConstants;
 import com.yuki.yukibot.util.enums.RoleEnum;
 import lombok.extern.slf4j.Slf4j;

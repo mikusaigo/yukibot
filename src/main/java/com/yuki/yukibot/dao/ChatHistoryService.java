@@ -1,7 +1,7 @@
 package com.yuki.yukibot.dao;
 
 import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
-import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
+import com.yuki.yukibot.util.enums.CacheClearStrategyEnum;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
 package com.yuki.yukibot.util;
 
+import cn.hutool.json.JSONUtil;
 import com.yuki.yukibot.config.QQBotNormalConfig;
 import com.yuki.yukibot.util.messageHandler.CommonMessageHandler;
 import kotlin.coroutines.CoroutineContext;
@@ -9,10 +10,13 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.BotFactory;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.utils.BotConfiguration;
+import net.mamoe.mirai.utils.DeviceInfo;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
+import xyz.cssxsh.mirai.device.MiraiDeviceGenerator;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
 
 /**
  * TODO: 将不同模式处理封装为返回布尔值
@@ -32,10 +36,10 @@ public class QQRobot extends SimpleListenerHost {
         botConfiguration.setProtocol(BotConfiguration.MiraiProtocol.ANDROID_PAD);
         botConfiguration.setAutoReconnectOnForceOffline(true);
         botConfiguration.setLoginCacheEnabled(true);
-//        MiraiDeviceGenerator miraiDeviceGenerator = new MiraiDeviceGenerator();
-//        DeviceInfo deviceInfo = miraiDeviceGenerator.generate();
-//        String jsonStr = JSONUtil.toJsonStr(deviceInfo);
-//        log.info("device_info===> {}", jsonStr);
+        MiraiDeviceGenerator miraiDeviceGenerator = new MiraiDeviceGenerator();
+        DeviceInfo deviceInfo = miraiDeviceGenerator.generate();
+        String jsonStr = JSONUtil.toJsonStr(deviceInfo);
+        log.info("device_info===> {}", jsonStr);
 //        botConfiguration.setDeviceInfo(bot -> DeviceInfo.from(new File("src/main/resources/device/device.json")));
         // 创建机器人实例
 

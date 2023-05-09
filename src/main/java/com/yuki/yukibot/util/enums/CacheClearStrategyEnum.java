@@ -1,4 +1,4 @@
-package com.yuki.yukibot.util.constants;
+package com.yuki.yukibot.util.enums;
 
 /**
  * 缓存清理策略枚举

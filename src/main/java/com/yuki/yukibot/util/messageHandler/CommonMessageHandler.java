@@ -15,7 +15,7 @@ import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
 import com.yuki.yukibot.util.AvailableChecker;
 import com.yuki.yukibot.util.CacheKeyBuilder;
 import com.yuki.yukibot.util.ChatUtil;
-import com.yuki.yukibot.util.constants.CacheClearStrategyEnum;
+import com.yuki.yukibot.util.enums.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.enums.CommandTypeEnum;
 import com.yuki.yukibot.util.enums.RoleEnum;
 import com.yuki.yukibot.util.msgsender.GroupMessageSender;
@@ -129,10 +129,7 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
     @EventHandler
     @Override
     public void onFriendInputMessage(FriendInputStatusChangedEvent event) {
-        boolean inputting = event.getInputting();
-        if (!inputting) {
-//            MessageSender.sendMessage(event.getFriend(), "要离开了喵？");
-        }
+
     }
 
     /**
@@ -161,15 +158,15 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
         Group group = event.getGroup();
         Member sender = event.getSender();
         MessageChain messageChain = event.getMessage();
+        String message = ChatUtil.getRealMsg(messageChain.contentToString());
+        if (CharSequenceUtil.isBlank(message)) {
+            return;
+        }
         CommandTypeEnum command = CommandRecognizer.getCommandTypeByMsg(messageChain.contentToString());
         String groupCacheKey = CacheKeyBuilder.buildGroupKey(group.getId(), sender.getId());
         String result;
         switch (command) {
             case SYS_MSG_SET:
-                String message = ChatUtil.getRealMsg(messageChain.contentToString());
-                if (CharSequenceUtil.isBlank(message)) {
-                    return;
-                }
                 saveCache(groupCacheKey, new ChatCache(message, null, message.length(), true));
                 result = "好的喵~";
                 break;
@@ -186,9 +183,6 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
                 break;
             default:
                 result = "bot好像坏掉了喵~ 请向管理员v50解决问题";
-        }
-        if (null == result) {
-            return;
         }
         GroupMessageSender.sendQuoteAtMsg(group, sender, messageChain, result);
     }
@@ -217,9 +211,15 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
 
         ChatMessage chatMessage = new ChatMessage(RoleEnum.USER.getRole(), message);
         clearedHistoryList.add(chatMessage);
-        ChatCompletionResponse chat = chatGPTApi.chat(clearedHistoryList);
-        result = chat.getChoices().get(0).getMessage().getContent();
-        int totalTokens = chat.getUsage().getTotal_tokens();
+        int totalTokens = 0;
+        try {
+            ChatCompletionResponse chat = chatGPTApi.chat(clearedHistoryList);
+            result = chat.getChoices().get(0).getMessage().getContent();
+            totalTokens = chat.getUsage().getTotal_tokens();
+        } catch (YukiBotException e) {
+            log.error(e.getMessage());
+            result = e.getMessage();
+        }
         if (isSaveCache) {
             saveCache(cacheKey, new ChatCache(message, result, totalTokens, false));
         }
@@ -239,7 +239,7 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
     }
 
     private static String getJsonStrCache(ChatCache chatCache, List<ChatMessageCache> msgHistoryList) {
-        ChatMessageCache user = new ChatMessageCache(RoleEnum.USER.getRole(), chatCache.getChatMsg(), chatCache.getToken());
+        ChatMessageCache user = new ChatMessageCache(RoleEnum.USER.getRole(), chatCache.getUserMsg(), chatCache.getToken());
         ChatMessageCache system = new ChatMessageCache(RoleEnum.SYSTEM.getRole(), chatCache.getUserMsg(), chatCache.getToken());
         ChatMessageCache assistant = new ChatMessageCache(RoleEnum.ASSISTANT.getRole(), chatCache.getChatMsg(), chatCache.getToken());
         if (CollUtil.isEmpty(msgHistoryList)) {
