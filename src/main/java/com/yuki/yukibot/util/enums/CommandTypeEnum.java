@@ -9,6 +9,14 @@ public enum CommandTypeEnum {
 
     NORMAL("normal", "正常对话"),
 
+    MUTE("mute", "禁言"),
+
+    UN_MUTE("unmute", "取消禁言"),
+
+    MUTE_ALL("muteall", "全体禁言"),
+
+    UN_MUTE_ALL("unmuteall", "全员禁言取消"),
+
     CLEAR_ALL("clearall", "清除所有"),
 
     CLEAR_CHAT("clearchat", "清除聊天");

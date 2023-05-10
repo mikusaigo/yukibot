@@ -11,7 +11,9 @@ public enum YukiBotRespStateEnum {
 
     TOO_LONG_REQUEST(400, "被灌注太多了喵，请尝试@bot并输入清理全部"),
 
-    INVALID_ALLOWED_MODE(601, "不合法的QQBot开放的QQ群组或QQ好友过滤模式配置");
+    INVALID_ALLOWED_MODE(601, "不合法的QQBot开放的QQ群组或QQ好友过滤模式配置"),
+
+    WRONG_DURATION(701, "时间格式不对喵，举个例子喵：\"1分钟\"，\"2小时\"，\"3天\",时间最短为0秒，最长为30天");
 
     private final int code;
 

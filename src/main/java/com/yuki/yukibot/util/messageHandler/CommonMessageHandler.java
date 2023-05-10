@@ -15,6 +15,7 @@ import com.yuki.yukibot.model.chatgpt.ChatMessageCache;
 import com.yuki.yukibot.util.AvailableChecker;
 import com.yuki.yukibot.util.CacheKeyBuilder;
 import com.yuki.yukibot.util.ChatUtil;
+import com.yuki.yukibot.util.GroupManager;
 import com.yuki.yukibot.util.enums.CacheClearStrategyEnum;
 import com.yuki.yukibot.util.enums.CommandTypeEnum;
 import com.yuki.yukibot.util.enums.RoleEnum;
@@ -22,10 +23,13 @@ import com.yuki.yukibot.util.msgsender.GroupMessageSender;
 import com.yuki.yukibot.util.msgsender.MessageSender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.AnonymousMember;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
+import net.mamoe.mirai.contact.MemberPermission;
+import net.mamoe.mirai.contact.NormalMember;
 import net.mamoe.mirai.event.EventHandler;
 import net.mamoe.mirai.event.SimpleListenerHost;
 import net.mamoe.mirai.event.events.FriendInputStatusChangedEvent;
@@ -40,6 +44,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 通用消息处理器
@@ -178,6 +184,33 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
                 chatHistoryService.clearHistory(groupCacheKey, CacheClearStrategyEnum.ALL_WITHOUT_SYS);
                 result = "清除成功喵~";
                 break;
+            case MUTE:
+                MemberPermission botPermission = group.getBotPermission();
+                if (!MemberPermission.ADMINISTRATOR.equals(botPermission) && !MemberPermission.OWNER.equals(botPermission)){
+                    result = "主人没有禁言权限喵";
+                    break;
+                }
+                MemberPermission permission = sender.getPermission();
+                if (!MemberPermission.ADMINISTRATOR.equals(permission) && !MemberPermission.OWNER.equals(permission)){
+                    result = "yuki没有禁言权限喵";
+                    break;
+                }
+                Pattern pattern = Pattern.compile("@(\\d{5,})");
+                Matcher matcher = pattern.matcher(message);
+                if (matcher.find()){
+                    NormalMember targetMember = group.getOrFail(Long.parseLong(matcher.group()));
+                    GroupManager.mute(targetMember, message);
+                    result = "禁言成功喵";
+                    break;
+                }
+                result = "没找到喵";
+                break;
+//            case UN_MUTE:
+//                break;
+//            case MUTE_ALL:
+//                break;
+//            case UN_MUTE_ALL:
+//                break;
             case NORMAL:
                 result = getResult(groupCacheKey, messageChain, !(sender instanceof AnonymousMember));
                 break;
@@ -234,17 +267,24 @@ public class CommonMessageHandler extends SimpleListenerHost implements MessageH
      */
     public void saveCache(String cacheKey, ChatCache chatCache) {
         List<ChatMessageCache> msgHistoryList = chatHistoryService.getMsgHistoryList(cacheKey);
-        String cache = getJsonStrCache(chatCache, msgHistoryList);
+        String cache = buildJsonStrCache(chatCache, msgHistoryList);
         chatHistoryService.saveMsgHistory(cacheKey, cache);
     }
 
-    private static String getJsonStrCache(ChatCache chatCache, List<ChatMessageCache> msgHistoryList) {
+    /**
+     * 构建json字符串缓存
+     * @param chatCache 聊天缓存对象
+     * @param msgHistoryList 历史记录
+     * @return json字符串缓存数据
+     */
+    private static String buildJsonStrCache(ChatCache chatCache, List<ChatMessageCache> msgHistoryList) {
         ChatMessageCache user = new ChatMessageCache(RoleEnum.USER.getRole(), chatCache.getUserMsg(), chatCache.getToken());
         ChatMessageCache system = new ChatMessageCache(RoleEnum.SYSTEM.getRole(), chatCache.getUserMsg(), chatCache.getToken());
         ChatMessageCache assistant = new ChatMessageCache(RoleEnum.ASSISTANT.getRole(), chatCache.getChatMsg(), chatCache.getToken());
         if (CollUtil.isEmpty(msgHistoryList)) {
             msgHistoryList = new LinkedList<>();
         }
+        // 如果是系统消息，如果没有则添加到第一个，有则覆盖到第一个
         if (chatCache.isSysMsg()) {
             ChatMessage first = CollUtil.getFirst(msgHistoryList);
             if (null != first && RoleEnum.SYSTEM.getRole().equals(first.getRole())) {
