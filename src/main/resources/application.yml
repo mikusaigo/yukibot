@@ -1,12 +1,26 @@
 spring:
   application:
     name: yukibot
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/yuki_bot?characterEncoding=UTF8&Timezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
   redis:
     host: localhost
     port: 6379
     database: 0
-    password: yuki123
-    timeout: 5000
+    password: ${REDIS_PASSWORD}
+    timeout: 3000
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+  mapper-location: classpath*:mapper/*Mapper.xml
+  global-config:
+    db-config:
+      id-type: auto
 
 server:
   port: 8010
@@ -14,7 +28,7 @@ server:
 chatgpt:
   api:
     url: https://api.openai.com/v1/chat/completions
-    key: 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
+    key: ${CHATGPT_API_KEY}
   model: gpt-3.5-turbo
   max-tokens: 2048
   frequency-penalty: 0
@@ -23,8 +37,8 @@ chatgpt:
   stream: false
 
 qqbot:
-  id: 2074312668
-  password: yukino52
+  id: #bot账号
+  password: #bot密码
   authority:
     #是否允许从受允许的群内添加bot为好友
     add-from-allowed-groups: true
@@ -37,9 +51,7 @@ qqbot:
       # mode为配置条件，如根据qq群号分组（id）或不限制（unlimited）
       mode: id
       ids:
-        - 992825862
-        - 917016978
-        - 694908428
+        - 0
     # 允许的好友
     allowed-friends:
       # mode为配置条件，如根据qq号分组（id）或qq好友分组（friend-group）分组或不限制（unlimited）
@@ -48,13 +60,8 @@ qqbot:
 #      mode: friend-group
       #配置为好友qq号
       ids:
-        - 1418692441
-        - 1799961533
-      friend-groups:
-        # 配置为好友分组的组id，0为【我的好友】分组
-        ids:
-          - 0
-        name:
-          - 我的好友
+        - 0
+      group-name:
+        - 我的好友
     #是否允许非好友
     allowed-strangers: false

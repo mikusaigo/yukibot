@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yuki.yukibot.mapper.BotConfigMapper">
+
+    <resultMap id="botconf" type="com.yuki.yukibot.entity.BotConfigDO">
+        <result column="allowed_friends_ids" property="allowedFriendsIds" jdbcType="VARCHAR" javaType="list" typeHandler="com.yuki.yukibot.util.typehandler.LongListTypeHandler"/>
+        <result column="allowed_groups_ids" property="allowedGroupsIds" jdbcType="VARCHAR" javaType="list" typeHandler="com.yuki.yukibot.util.typehandler.LongListTypeHandler"/>
+        <result column="allowed_group_name" property="allowedGroupName" jdbcType="VARCHAR" javaType="list" typeHandler="com.yuki.yukibot.util.typehandler.StringListTypeHandler"/>
+    </resultMap>
+
+    <select id="getBotConfigById" resultMap="botconf">
+        select *
+        from bot_config
+        where bot_id = #{id};
+    </select>
+
+    <select id="getBotConfigByIden" resultMap="botconf">
+        select *
+        from bot_config
+        where bot_identify = #{identify}
+    </select>
+</mapper>

@@ -5,21 +5,13 @@ package com.yuki.yukibot.util.enums;
  */
 public enum CommandTypeEnum {
 
-    SYS_MSG_SET("sys", "设定"),
-
-    NORMAL("normal", "正常对话"),
-
     MUTE("mute", "禁言"),
 
     UN_MUTE("unmute", "取消禁言"),
 
     MUTE_ALL("muteall", "全体禁言"),
 
-    UN_MUTE_ALL("unmuteall", "全员禁言取消"),
-
-    CLEAR_ALL("clearall", "清除所有"),
-
-    CLEAR_CHAT("clearchat", "清除聊天");
+    UN_MUTE_ALL("unmuteall", "全员禁言取消");
 
     final String enCode;
 
@@ -36,5 +28,9 @@ public enum CommandTypeEnum {
 
     public String getCnCode() {
         return cnCode;
+    }
+
+    public static boolean equals(CommandTypeEnum typeEnum, String command){
+        return typeEnum.getCnCode().equals(command) || typeEnum.getEnCode().equals(command);
     }
 }

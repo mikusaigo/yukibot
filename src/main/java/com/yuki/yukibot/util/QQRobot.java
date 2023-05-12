@@ -1,7 +1,8 @@
 package com.yuki.yukibot.util;
 
 import cn.hutool.json.JSONUtil;
-import com.yuki.yukibot.config.QQBotNormalConfig;
+import com.yuki.yukibot.dao.BotConfigService;
+import com.yuki.yukibot.entity.BotConfigDO;
 import com.yuki.yukibot.util.messageHandler.CommonMessageHandler;
 import kotlin.coroutines.CoroutineContext;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Component;
 import xyz.cssxsh.mirai.device.MiraiDeviceGenerator;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 
 /**
  * TODO: 将不同模式处理封装为返回布尔值
@@ -26,7 +26,7 @@ import java.io.File;
 @RequiredArgsConstructor
 public class QQRobot extends SimpleListenerHost {
 
-    private final QQBotNormalConfig qqBotNormalConfig;
+    private final BotConfigService botConfigService;
 
     private final CommonMessageHandler commonMessageHandler;
 
@@ -43,7 +43,8 @@ public class QQRobot extends SimpleListenerHost {
 //        botConfiguration.setDeviceInfo(bot -> DeviceInfo.from(new File("src/main/resources/device/device.json")));
         // 创建机器人实例
 
-        Bot bot = BotFactory.INSTANCE.newBot(qqBotNormalConfig.getId(), qqBotNormalConfig.getPassword(), botConfiguration);
+        BotConfigDO config = botConfigService.getConfig("yuki");
+        Bot bot = BotFactory.INSTANCE.newBot(config.getBotId(), config.getBotPwd(), botConfiguration);
         // 注册事件监听器
         bot.getEventChannel().registerListenerHost(commonMessageHandler);
         // 启动机器人
@@ -52,7 +53,7 @@ public class QQRobot extends SimpleListenerHost {
 
     @Override
     public void handleException(@NotNull CoroutineContext context, @NotNull Throwable exception) {
-        log.error(exception.getMessage());
+        exception.printStackTrace();
     }
 
 

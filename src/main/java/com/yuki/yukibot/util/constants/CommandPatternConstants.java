@@ -15,13 +15,13 @@ public class CommandPatternConstants {
     public static final String CACHE_CLEAR_CHAT = "^(@\\d{5,}\\s?)?(清除聊天|clearchat)$";
 
     // 校验指令消息是否为禁言
-    public static final String MUTE = "^(禁言|mute)";
+    public static final String MUTE = "^@(\\d{5,})\\s+(禁言|mute|解除禁言|unmute)\\s?(?:(\\d+)(秒|分钟|小时|天|周|月))?$";
 
-    // 校验指令消息是否为取消禁言
-    public static final String UN_MUTE = "^(取消禁言|unmute)";
+    // 校验指令消息是否为解除禁言
+    public static final String UN_MUTE = "^@\\d{5,}\\s+(解除禁言|unmute)\\s+@\\d{5,}";
 
     // 校验指令消息是否为全员禁言
-    public static final String MUTE_ALL = "^(全员禁言|muteall)$";
+    public static final String MUTE_ALL = "^(全员禁言|muteall|取消全员禁言|unmuteall)$";
 
     // 校验指令消息是否为取消全员禁言
     public static final String UN_MUTE_ALL = "^(取消全员禁言|unmuteall)$";

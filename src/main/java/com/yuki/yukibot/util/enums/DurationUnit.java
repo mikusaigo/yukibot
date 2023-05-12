@@ -23,4 +23,16 @@ public enum DurationUnit {
     public String getName() {
         return name;
     }
+
+
+    public static DurationUnit get(String name) {
+        DurationUnit[] values = DurationUnit.values();
+        for (DurationUnit value : values) {
+            if (value.getName().equals(name)){
+                return value;
+            }
+        }
+        return null;
+    }
+
 }

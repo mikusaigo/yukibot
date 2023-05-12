@@ -87,6 +87,11 @@
             <artifactId>mirai-login-solver-selenium</artifactId>
             <version>1.0-dev-17</version>
         </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.4.2</version>
+        </dependency>
     </dependencies>
 
     <build>

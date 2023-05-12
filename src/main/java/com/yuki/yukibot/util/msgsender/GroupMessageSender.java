@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.Member;
 import net.mamoe.mirai.message.data.At;
+import net.mamoe.mirai.message.data.Dice;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.PlainText;
@@ -29,6 +30,13 @@ public class GroupMessageSender extends MessageSender {
                 .append(new PlainText(message))
                 .build();
         group.sendMessage(reply);
+    }
+
+    public static void dicing(Group group){
+        MessageChain diceReply = new MessageChainBuilder()
+                .append(Dice.random())
+                .build();
+        group.sendMessage(diceReply);
     }
 
     /**

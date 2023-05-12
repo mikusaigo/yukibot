@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 @Configuration
 @ConfigurationProperties(prefix = "qqbot.authority")
 public class QQBotAuthorityConfig {

@@ -13,7 +13,9 @@ public enum YukiBotRespStateEnum {
 
     INVALID_ALLOWED_MODE(601, "不合法的QQBot开放的QQ群组或QQ好友过滤模式配置"),
 
-    WRONG_DURATION(701, "时间格式不对喵，举个例子喵：\"1分钟\"，\"2小时\"，\"3天\",时间最短为0秒，最长为30天");
+    WRONG_DURATION(701, "时间格式不对喵，举个例子喵：\"1分钟\"，\"2小时\"，\"3天\",时间最短为0秒，最长为30天"),
+
+    UNKNOWN_COMMAND(702, "指令错误喵");
 
     private final int code;
 

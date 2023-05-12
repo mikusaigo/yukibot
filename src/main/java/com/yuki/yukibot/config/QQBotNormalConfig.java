@@ -3,6 +3,7 @@ package com.yuki.yukibot.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+@Deprecated
 @Configuration
 @ConfigurationProperties(prefix = "qqbot")
 public class QQBotNormalConfig {
